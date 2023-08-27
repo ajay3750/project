@@ -1,143 +1,56 @@
-function project()
-    global f_angle_name a_name;
-    f_angle_name = {};
+% MATLAB CODE FOR SURFACE IMPEDANCE CALCULATION
+Z0 = 377;
+Kt = 0.000139;
+gamma = 0.4;
 
-    % Create the main figure window
-    fig = figure('Name', 'DMSRDE DRDO Project- APP 1');
+frequency=[5,8]*10^6;
+Km = 2 * pi * frequency * sqrt(2);
+Kz = sqrt(Km.^2 - Kt.^2);
+d = 1.6 * 10^-3;
+permitivity_freespace = 4 * pi * 10^7;
+Zm = 2 * pi * permitivity_freespace;
+Zm_value = Zm ./ Kz;
 
-    % Set the position and size of the main frame
-    left = 300;
-    bottom = 100;
-    width = 600;
-    height = 400;
-    frame = uipanel('Position', [left, bottom, width, height]);
+% Input Impedance Calculation
+Num_Zin = Zm_value .* (Z0 + 1i .* Zm_value .* tan(Kz .* d));
+Den_Zin = Zm_value + 1i * Z0 * tan(Kz .* d);
+Zin_final = Num_Zin ./ Den_Zin;
 
-    % ANGLE INFORMATION
-    angle_info_frame = uipanel(frame, 'Title', 'Angle Information', 'Position', [0.1, 0.6, 0.8, 0.2]);
+% Surface Impedance Calculation
+Num_Zs = (-Z0 .* Zin_final .* (1 + gamma));
+Den_Zs = (Zin_final .* gamma + Z0 * gamma - Zin_final + Z0);
+Zs_final = Num_Zs ./ Den_Zs;
 
-    angle_value_label = uicontrol(angle_info_frame, 'Style', 'text', 'String', 'Enter the Angle:', 'Position', [10, 50, 120, 30]);
-    angle_value_entry = uicontrol(angle_info_frame, 'Style', 'edit', 'Position', [130, 50, 100, 30]);
+% When thickness is less than the wavelength
+Zs_1 = -(Z0 * (1 + gamma)) / (2 * gamma);
 
-    button_add_to_list = uicontrol(angle_info_frame, 'Style', 'pushbutton', 'String', 'Add to the List', 'Position', [250, 50, 120, 30], 'Callback', @list_making);
-
-    angle_list_label = uicontrol(angle_info_frame, 'Style', 'text', 'String', 'The Entered Angles are:', 'Position', [10, 10, 300, 30]);
-
-    listbox = uicontrol(angle_info_frame, 'Style', 'listbox', 'Position', [310, 10, 150, 80]);
-
-    % TEXT INFORMATION
-    textfile_info_frame = uipanel(frame, 'Title', 'Text File Information', 'Position', [0.1, 0.4, 0.8, 0.2]);
-
-    txtfile_location_label = uicontrol(textfile_info_frame, 'Style', 'text', 'String', 'Location of the .prn Files:', 'Position', [10, 50, 150, 30]);
-    txtfile_location_entry = uicontrol(textfile_info_frame, 'Style', 'edit', 'Position', [160, 50, 200, 30]);
-
-    prefix_anglename_label = uicontrol(textfile_info_frame, 'Style', 'text', 'String', 'Prefix of the .prn files:', 'Position', [10, 10, 150, 30]);
-    prefix_anglename_entry = uicontrol(textfile_info_frame, 'Style', 'edit', 'Position', [160, 10, 200, 30]);
-
-    % FREQUENCY INFORMATION
-    freq_info_frame = uipanel(frame, 'Title', 'Frequency Information', 'Position', [0.1, 0.2, 0.8, 0.2]);
-
-    freq_info_label = uicontrol(freq_info_frame, 'Style', 'text', 'String', 'Enter the Frequency in GHz:', 'Position', [10, 50, 200, 30]);
-    freq_info_entry = uicontrol(freq_info_frame, 'Style', 'edit', 'Position', [220, 50, 100, 30]);
-
-    % OUTPUT INFORMATION
-    output_info_frame = uipanel(frame, 'Title', 'Output Information', 'Position', [0.1, 0.0, 0.8, 0.2]);
-
-    output_location_label = uicontrol(output_info_frame, 'Style', 'text', 'String', 'Output File Location:', 'Position', [10, 50, 150, 30]);
-    output_location_entry = uicontrol(output_info_frame, 'Style', 'edit', 'Position', [160, 50, 200, 30]);
-
-    % Button
-    button_process = uicontrol(frame, 'Style', 'pushbutton', 'String', 'Process', 'Position', [10, 10, 80, 30], 'Callback', @main_process);
-
-    % Main loop
-    uiwait(fig);
-
-    function list_making(src, event)
-        a_name = get(angle_value_entry, 'String');
-        f_angle_name{end+1} = a_name;
-        items = get(listbox, 'String');
-        items{end+1} = a_name;
-        set(listbox, 'String', items);
-        set(angle_value_entry, 'String', '');
-    end
-
-    function main_process(src, event)
-        f_angle_prefix = get(prefix_anglename_entry, 'String');
-
-        % ADDING THE FOLDER DIRECTIVE
-        folder_path = get(txtfile_location_entry, 'String');
-        cd(folder_path);
-
-        % Rest of your code...
-        % DECLARING THE MATRICES
-        m_file = {};  % declaring the super matrix that will hold the freq and the s11 value value as matrices
-        m_freq = {};  % declaring the super matrix that will hold just the freq values as matrices
-        m_s11_value = {};  % declaring the super matrix that will hold just the s11 value as matrices
-        req_s11_value = {};  % declaring the matrix which will hold the s11 value of the input frequency.
-        
-        % Load data from text files and process it
-        % ... (remaining code)
-        sr = int(skipping_row_spinbox.get());
-    for angles= f_angle_name
-        file = loadtxt(f_angle_prefix + angles + '.prn', dtype="float", skiprows=sr);
-        m_file.append(file)
-        % LOADING ONLY THE FREQUENCY ELEMENTS TO A SUPER MATRIX
-        freq = file(:, 0);
-        freq = divide(freq, (10 .^ 9));
-        m_freq.append(freq)
-        % LOADING ONLY THE S11 VALUE ELEMENTS TO A SUPER MATRIX
-        s11_value = file(:, 1);
-        m_s11_value.append(s11_value)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % INITIALISING LOOP ITERATION LIMIT
-    n1 = len(f_angle_name);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % INITIALISING THE FREQUENCY TO BE SEARCHED
-    i_freq = float(freq_info_entry.get());
-    % SEARCHING FOR THE INPUT FREQUENCIES INDEX
-    i_index = find(freq == i_freq, 1);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % INITIALISING THE A MATRIX WITH CORRESPONDING S11 VALUE
-    for h = lenght(n1)
-        req_s11_value = [req_s11_value, m_s11_value(h, i_index)];  % inner_add is the index where frequency is found in freq matrix
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % FINAL MATRIX
-    % m_final=np.column_stack((f_angle_name, req_s11_value)) #arranging the angles with their s11 values
-    % print(m_final)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % SOME BASIC INFORMATON FROM DATA
-    end
-    mean_data = mean(req_s11_value);  % using the features of numpy to calculate mean
-    median_data = median(req_s11_value);  % median , maximum and the minimum values from
-    max_data = max(req_s11_value);  % the S11 Value set of the input frequency
-    min_data = min(req_s11_value);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % EXPORTING THE DATA TO AN EXCEL FILE
-    data = {'ANGLES': f_angle_name,  % creating tuples with headers column wise
-            'S11 VALUES': req_s11_value,
-            'MEAN VALUE': mean_data,
-            'MEDIAN VALUE': median_data,
-            'MAX VALUE': max_data,
-            'MIN VALUE': min_data
-            };
-    df = pd.DataFrame(data);  % creating a data frame
-
-    excel_name = 'EXCEL_' + str(f_angle_prefix) + '_' + str(i_freq) + '_GHz' ; % address of the location where
-    ad = str(output_location_entry.get());  % plot needs to be saved.
-    addr = ad + '/' + excel_name + '.xlsx';
-
-    df.to_excel(addr, index=False)  % exporting the complete data frame to excel
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % PLOTTING 2-D GRAPHS
-    fig_name = 'PLOT_' + str(f_angle_prefix) + '_' + str(i_freq) + '_GHz';  % address of the location where
-    addr1 = ad + '/' + fig_name + '.png';
-
-    plot(f_angle_name, req_s11_value)  % x axis= angle values  y axis the s11 value
-    title("ANGLE vs S11 VALUES")  % title of the plot figure
-    xlabel("ANGLES ")  % x axis's label
-    ylabel("S11 Values")  % y axis's label
-    savefig(addr1)  % plot figure is saved in the location
-    show()  % pops up the plot window
-    end 
-
-    end
-end
+%finding S21 data
+s21_1=(2.*Zs_final+Z0.*cos(Kz.*d)./Zs_final);
+s21_1;
+Zm_square=Zm_value.^2;
+Z0_square=Z0^2;
+s21_2=1j*((Zs_final.*Zm_square+Z0.*Zm_square+Zs_final.*Z0_square).*sin(Kz.*d))./(Zs_final.*Z0.*Zm_value);
+s21_temp=s21_1+s21_2;
+s21_temp;
+s21=2./s21_temp;
+s21;
+%8th equation plotting
+Zs_T_nu= -s21.*Z0.*Zm_value.*((Z0*cos(Kz.*d))+1j.*Zm_value.*sin(Kz.*d));
+Zs_T_den=2*Z0.*Zm_value.*(s21.*cos(Kz.*d)-1)+1j.*(Zm_square+Z0_square).*s21.*sin(Kz.*d);
+Zs_T=Zs_T_nu./Zs_T_den;
+%9th equation plotting when d<<lamda
+Zs_T_1=(s21.*Z0)./(2*(1-s21));
+% Plot magnitude and phase of Zs_1
+hold on
+plot(frequency, ones(size(frequency)) * real(Zs_1), 'b', 'LineWidth', 2);
+plot(frequency, ones(size(frequency)) * imag(Zs_1), 'r', 'LineWidth', 2);
+plot(frequency, real(Zs_final), 'b', 'LineWidth', 2);
+plot(frequency, imag(Zs_final), 'r', 'LineWidth', 2);
+plot(frequency, real(Zs_T), 'b', 'LineWidth', 2);
+plot(frequency, imag(Zs_T), 'r', 'LineWidth', 2);
+plot(frequency, real(Zs_T_1), 'b', 'LineWidth', 2);
+plot(frequency, imag(Zs_T_1), 'r', 'LineWidth', 2);
+xlabel('Frequency (Hz)');
+ylabel('Surface impedance (\Omega)');
+title('Surface Impedance vs Frequency ');
+grid on;
